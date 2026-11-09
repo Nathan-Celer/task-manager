@@ -517,7 +517,7 @@ document.addEventListener('contextmenu',function(e){if(e.target.closest('[data-h
 /* start */
 var fbAuth=null,unsubs=[];
 route();
-var FB=window.FIREBASE_CONFIG,configured=!!(FB&&FB.apiKey&&FB.apiKey.indexOf('PASTE')<0&&window.firebase);
+var FB=window.FIREBASE_CONFIG,configured=location.hostname!=='localhost'&&!!(FB&&FB.apiKey&&FB.apiKey.indexOf('PASTE')<0&&window.firebase);
 function ready(){S.ready=true;render()}
 function attach(uid,fs){
   var col=function(c){return fs.collection('users').doc(uid).collection(c)};
