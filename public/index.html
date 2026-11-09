@@ -49,8 +49,7 @@ h2{margin:0;font-size:17px;font-weight:700}
 .side{position:sticky;top:0;align-self:start;height:100vh;padding:32px 12px 24px 0;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--line)}
 .side a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;font-weight:500;color:var(--muted)}
 .side a.on{background:var(--ink);color:var(--bg);font-weight:700}
-.side .drop{margin-top:18px;min-height:48px;border-radius:99px;background:var(--accent);color:var(--on-accent);font-weight:700;justify-content:center}
-.side .box{font-weight:600;color:var(--accent)}
+.badge{min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--late);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .sync{margin-top:auto;font-size:13px;color:var(--muted);padding:0 12px}
 main{min-width:0;padding:36px 0 60px 32px;max-width:900px;width:100%}
 .tabbar{display:none}
@@ -79,7 +78,6 @@ main{min-width:0;padding:36px 0 60px 32px;max-width:900px;width:100%}
 .icon{width:44px;height:44px;border:0;background:transparent;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 12px 14px 20px;display:flex;align-items:center;gap:8px}
 .card .t{flex:1;min-width:0;font-size:20px;font-weight:600;overflow-wrap:anywhere}
-.card.opt{background:transparent;border:1.5px dashed var(--muted)}
 .card[data-hold]{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .asap{background:#C2410C;border-color:#C2410C;color:#fff}
 .asap small{display:block;font-size:13px;font-weight:700;letter-spacing:.05em}
@@ -239,6 +237,7 @@ var I={
  now:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
  proj:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg>',
  task:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+ note:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v10l-6 6H4Z"/><path d="M14 20v-6h6"/></svg>',
  hab:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>'
 };
 
@@ -265,22 +264,19 @@ function stripHtml(ds,trail){
 function loading(){return '<p class="empty">Loading…</p>'}
 function viewNow(){
   var h='<div class="head"><h1>Now</h1></div><div class="stack">';
-  var tasks=arr('tasks').filter(function(t){return !t.done}),asap=tasks.filter(function(t){return t.asap});
-  if(asap.length){var a=get('tasks',poolPick(asap,'asap'));
-    h+='<div class="card asap" data-hold="'+a.id+'"><div class="t"><small>ASAP</small>'+esc(a.title)+'</div>'+
-      (asap.length>1?'<button class="icon" data-act="shuf" data-k="asap" aria-label="Show another ASAP task">'+I.shuf+'</button>':'')+
-      '<button class="btn light" data-act="start" data-kind="task" data-id="'+a.id+'">Start</button></div>'}
-  var act=arr('projects').filter(projActive),withDl=act.filter(function(p){return p.deadline});
-  if(withDl.length){var min=withDl.map(function(p){return p.deadline}).sort()[0];
-    withDl.filter(function(p){return p.deadline===min}).forEach(function(p){h+=hero(p,false)})}
-  else if(act.length){h+=hero(get('projects',poolPick(act,'proj')),true)}
-  else h+='<div class="hero"><div class="big">Time to start a new project?</div><div class="foot"><span></span><button class="btn light" data-act="new-project">New project</button></div></div>';
-  if(!asap.length){var loose=tasks;if(loose.length){var t=get('tasks',poolPick(loose,'loose'));
-    h+='<div class="card" data-hold="'+t.id+'"><div class="t">'+esc(t.title)+'</div>'+(loose.length>1?'<button class="icon" data-act="shuf" data-k="loose" aria-label="Show another task">'+I.shuf+'</button>':'')+
-      '<button class="btn ghost" data-act="start" data-kind="task" data-id="'+t.id+'">Start</button></div>'}}
-  var hb=arr('habits');if(hb.length){var b=get('habits',poolPick(hb,'habit'));
-    h+='<div class="card opt"><div class="t">'+esc(b.name)+'</div>'+(hb.length>1?'<button class="icon" data-act="shuf" data-k="habit" aria-label="Show another habit">'+I.shuf+'</button>':'')+
-      '<button class="btn quiet" data-act="start" data-kind="habit" data-id="'+b.id+'">Start</button></div>'}
+  var tasks=arr('tasks').filter(function(t){return !t.done});
+  tasks.filter(function(t){return t.asap}).forEach(function(a){
+    h+='<div class="card asap"><div class="t"><small>ASAP</small>'+esc(a.title)+'</div>'+
+      '<button class="btn light" data-act="start" data-kind="task" data-id="'+a.id+'">Start</button></div>'});
+  var act=arr('projects').filter(projActive);
+  var dls=act.filter(function(p){return p.deadline}).map(function(p){return {n:p.name,d:p.deadline}})
+    .concat(tasks.filter(function(t){return !t.asap&&t.deadline}).map(function(t){return {n:t.title,d:t.deadline}}))
+    .sort(function(a,b){return a.d.localeCompare(b.d)}).slice(0,3);
+  if(dls.length){h+='<div class="sec"><h2>Deadlines</h2><div class="strips">'+dls.map(function(r){var i=dlInfo(r.d);
+    return '<div class="srow"><div class="n">'+esc(r.n)+'</div>'+(i.late?'<span class="dl late" style="font-weight:700;color:var(--late)">'+esc(i.txt)+'</span>':stripHtml(r.d))+'</div>'}).join('')+'</div></div>'}
+  else{
+    if(act.length)h+=hero(get('projects',poolPick(act,'proj')),true);
+    else h+='<div class="hero"><div class="big">Time to start a new project?</div><div class="foot"><span></span><button class="btn light" data-act="new-project">New project</button></div></div>'}
   return h+'</div>'}
 function hero(p,rand){
   var st=nextStep(p),late=p.deadline&&dlInfo(p.deadline).late,info=p.deadline?dlInfo(p.deadline):null;
@@ -294,11 +290,6 @@ function hero(p,rand){
 function viewProjects(){
   var ps=arr('projects').sort(function(a,b){return (a.deadline||'9999').localeCompare(b.deadline||'9999')});
   var h='<div class="head"><h1>Projects</h1></div>';
-  var rows=[];ps.filter(function(p){return p.deadline}).forEach(function(p){rows.push({n:p.name,d:p.deadline})});
-  arr('tasks').filter(function(t){return !t.done&&t.deadline}).forEach(function(t){rows.push({n:t.title,d:t.deadline})});
-  rows.sort(function(a,b){return a.d.localeCompare(b.d)});
-  if(rows.length){h+='<div class="sec"><h2>Deadlines</h2><div class="strips">'+rows.map(function(r){var i=dlInfo(r.d);
-    return '<div class="srow"><div class="n">'+esc(r.n)+'</div>'+(i.late?'<span class="dl late" style="font-weight:700;color:var(--late)">'+esc(i.txt)+'</span>':stripHtml(r.d))+'</div>'}).join('')+'</div></div>'}
   h+='<div class="sec"><h2>All projects</h2>';
   if(!ps.length)h+='<p class="empty">No project yet.</p>';
   h+='<div class="strips">'+ps.map(function(p){var s=p.steps||[],i=p.deadline?dlInfo(p.deadline):null;
@@ -325,17 +316,18 @@ function viewProject(){
 function viewTasks(){
   var ts=arr('tasks').filter(function(t){return !t.done}),asap=ts.filter(function(t){return t.asap}),oth=ts.filter(function(t){return !t.asap}).sort(function(a,b){return (a.deadline||'9999').localeCompare(b.deadline||'9999')});
   var h='<div class="head"><h1>Tasks</h1></div>';
-  if(asap.length)h+='<div class="sec"><h2 style="color:var(--warn)">ASAP</h2><div class="list" style="border-color:#C2410C">'+asap.map(function(t){return '<div class="row asap" data-hold="'+t.id+'"><button class="row asap" style="flex:1;border:0;font-weight:700;font-size:17px;min-height:56px" data-act="edit-task" data-id="'+t.id+'">'+esc(t.title)+'</button><button class="icon" aria-label="Mark done" data-act="task-done" data-id="'+t.id+'"><span class="circle"></span></button></div>'}).join('')+'</div></div>';
-  h+='<div class="sec"><h2>Other</h2>'+(oth.length?'<div class="list">'+oth.map(function(t){var i=t.deadline?dlInfo(t.deadline):null;
-    return '<div class="row" data-hold="'+t.id+'"><button class="row" style="flex:1;border:0;padding:0;min-height:56px" data-act="edit-task" data-id="'+t.id+'"><span>'+esc(t.title)+'</span>'+(i?'<span class="dl'+(i.late?' late':'')+'">'+esc(i.txt)+'</span>':'')+'</button><button class="icon" aria-label="Mark done" data-act="task-done" data-id="'+t.id+'"><span class="circle"></span></button></div>'}).join('')+'</div>':(asap.length?'':'<p class="empty">No task yet.</p>'))+'</div>';
+  h+='<div class="sec">'+(ts.length?'<div class="list">'+asap.map(function(t){return '<div class="row asap" data-hold="'+t.id+'"><button class="row asap" style="flex:1;border:0;font-weight:700;font-size:17px;min-height:56px" data-act="edit-task" data-id="'+t.id+'"><span><small>ASAP</small>'+esc(t.title)+'</span></button><button class="icon" aria-label="Mark done" data-act="task-done" data-id="'+t.id+'"><span class="circle"></span></button></div>'}).join('')+
+    oth.map(function(t){var i=t.deadline?dlInfo(t.deadline):null,n=t.deadline?diff(today(),parse(t.deadline)):0;
+    var left=i&&!i.late?(n===0?'Due today':n+(n===1?' day left':' days left')):i&&i.txt;
+    return '<div class="row" data-hold="'+t.id+'"><button class="row" style="flex:1;border:0;padding:0;min-height:56px" data-act="edit-task" data-id="'+t.id+'"><span>'+esc(t.title)+'</span>'+(i?'<span class="dl'+(i.late?' late':'')+'">'+esc(left)+'</span>':'')+'</button><button class="icon" aria-label="Mark done" data-act="task-done" data-id="'+t.id+'"><span class="circle"></span></button></div>'}).join('')+'</div>':'<p class="empty">No task yet.</p>')+'</div>';
   h+='<div class="acts" style="margin-top:18px"><button class="btn ghost" style="border-color:var(--warn);color:var(--warn)" data-act="add-asap">+ ASAP</button><button class="btn quiet" data-act="add-task">+ Task</button></div>';
   return h}
 
 function periodStart(){var t=today();if(S.period==='week'){var d=new Date(t);d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
   if(S.period==='year')return new Date(t.getFullYear(),0,1);return new Date(t.getFullYear(),t.getMonth(),1)}
 function viewHabits(){
-  var h='<div class="head"><h1>Habits</h1></div><div style="margin-top:16px"><div class="seg" role="tablist"><button class="'+(S.hview==='log'?'on':'')+'" data-act="hview" data-v="log">Log</button><button class="'+(S.hview==='recap'?'on':'')+'" data-act="hview" data-v="recap">Recap</button></div></div>';
   var hb=arr('habits');
+  var h='<div class="head"><h1>Habits</h1>'+(hb.length?'<button class="pill" data-act="pick-habit">Choose an activity</button>':'')+'</div><div style="margin-top:16px"><div class="seg" role="tablist"><button class="'+(S.hview==='log'?'on':'')+'" data-act="hview" data-v="log">Log</button><button class="'+(S.hview==='recap'?'on':'')+'" data-act="hview" data-v="recap">Recap</button></div></div>';
   if(S.hview==='log'){
     h+='<div class="stack" style="margin-top:20px;gap:10px">';
     if(!hb.length)h+='<p class="empty">No habit yet.</p>';
@@ -347,9 +339,11 @@ function viewHabits(){
   else{
     h+='<div style="display:flex;gap:8px;margin-top:16px">'+[['week','Week'],['month','Month'],['year','Year']].map(function(p){return '<button class="pill'+(S.period===p[0]?' on':'')+'" data-act="period" data-v="'+p[0]+'">'+p[1]+'</button>'}).join('')+'</div>';
     var from=iso(periodStart()),logs=arr('logs').filter(function(l){return l.date>=from});
-    h+='<div class="stack" style="margin-top:20px;gap:10px">'+(hb.length?'':'<p class="empty">No habit yet.</p>')+hb.map(function(b){
+    var rows=hb.map(function(b){
       var mine=logs.filter(function(l){return l.habitId===b.id}),tot=b.unit?mine.reduce(function(s,l){return s+(Number(l.amount)||0)},0):mine.length;
-      return '<div class="rec"><div class="nm">'+esc(b.name)+'</div><div class="v">'+(Math.round(tot*100)/100)+(b.unit?'<small>'+esc(b.unit)+'</small>':'')+'</div></div>'}).join('')+'</div>'}
+      return {b:b,tot:Math.round(tot*100)/100}}).filter(function(r){return r.tot});
+    h+='<div class="stack" style="margin-top:20px;gap:10px">'+(hb.length?'':'<p class="empty">No habit yet.</p>')+rows.map(function(r){
+      return '<div class="rec"><div class="nm">'+esc(r.b.name)+'</div><div class="v">'+r.tot+(r.b.unit?'<small>'+esc(r.b.unit)+'</small>':'')+'</div></div>'}).join('')+'</div>'}
   return h}
 
 function viewCapture(){
@@ -369,7 +363,7 @@ var TABS=[['now','Now',I.now],['projects','Projects',I.proj],['tasks','Tasks',I.
 function renderNav(){
   var n=Object.keys(S.data.box).length;
   $('#side').innerHTML=TABS.map(function(t){return '<a href="#'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'" '+(S.tab===t[0]?'aria-current="page"':'')+'>'+t[2]+t[1]+'</a>'}).join('')+
-    '<a href="#capture" class="drop">+ Drop</a><a href="#capture" class="box">Box · '+n+'</a>'+
+    '<a href="#capture">'+I.note+'Temp sticky-note'+(n?'<span class="badge">'+n+'</span>':'')+'</a>'+
     (S.synced===false?'<div class="sync">Saved on this device only</div>':'')+(S.user?'<button class="sync" style="background:none;border:0;text-align:left;min-height:44px" data-act="signout">Sign out</button>':'');
   var o=function(t){return '<a href="#'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+t[2]+t[1]+'</a>'};
   $('#tabbar').innerHTML=o(TABS[0])+o(TABS[1])+'<a href="#capture" class="plus" aria-label="Capture something"><span>'+I.plus+'</span></a>'+o(TABS[2])+o(TABS[3])}
@@ -411,28 +405,38 @@ function confirmBox(title,text,yes,on){modal({title:title,text:text,buttons:[{la
 
 /* focus mode */
 var ftimer=null;
-function fmtTime(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
-  return (h?h+':'+String(m).padStart(2,'0'):String(m).padStart(2,'0'))+':'+String(x).padStart(2,'0')}
-function elapsed(){var f=S.focus;return f.acc+(f.paused?0:Date.now()-f.t0)}
-function openFocus(kind,id,sid){
-  var f={kind:kind,id:id,sid:sid,acc:0,t0:Date.now(),paused:false,title:'',label:'',desc:'',late:false};
+function fmtTime(ms){var m=Math.ceil(Math.max(ms,0)/60000);return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')}
+function remaining(){var f=S.focus;return f.dur-f.acc-(f.paused?0:Date.now()-f.t0)}
+function askDuration(kind,id,sid,prev){
+  modal({title:'How long?',fields:[{label:'Minutes',type:'number',value:prev||''}],buttons:[{label:'Cancel',kind:'quiet'},{label:'Start',needs0:true,on:function(v){
+    var m=parseFloat(v[0]);if(m>0)openFocus(kind,id,sid,m)}}]})}
+function openFocus(kind,id,sid,mins){
+  var f={kind:kind,id:id,sid:sid,mins:mins,dur:mins*60000,brk:false,acc:0,t0:Date.now(),paused:false,title:'',label:'',desc:'',late:false};
   if(kind==='step'){var p=get('projects',id),s=(p.steps||[]).find(function(x){return x.id===sid});if(!s)return;f.title=s.title;f.desc=s.desc||'';f.label=p.name;f.late=!!(p.deadline&&dlInfo(p.deadline).late)}
   else if(kind==='task'){var t=get('tasks',id);if(!t)return;f.title=t.title;f.desc=t.desc||'';f.label=t.asap?'ASAP':''}
   else{var b=get('habits',id);if(!b)return;f.title=b.name;f.label=b.unit?b.unit:''}
   S.focus=f;drawFocus();clearInterval(ftimer);ftimer=setInterval(tick,500)}
 function drawFocus(){var f=S.focus,el=$('#focus');el.hidden=false;el.className=f.late?'late':'';
-  el.innerHTML='<div class="tp"><div><div class="lab">'+esc(f.label)+'</div><h2>'+esc(f.title)+'</h2>'+(f.desc?'<p>'+esc(f.desc)+'</p>':'')+'</div><button class="icon" data-act="f-close" aria-label="Leave">'+I.x+'</button></div>'+
-  '<div class="mid"><div class="time" id="ftime" aria-hidden="true">'+fmtTime(elapsed())+'</div></div>'+
+  el.innerHTML='<div class="tp"><div><div class="lab">'+esc(f.brk?'Break':f.label)+'</div><h2>'+esc(f.title)+'</h2>'+(f.desc?'<p>'+esc(f.desc)+'</p>':'')+'</div><button class="icon" data-act="f-close" aria-label="Leave">'+I.x+'</button></div>'+
+  '<div class="mid"><div class="time" id="ftime" aria-hidden="true">'+fmtTime(remaining())+'</div></div>'+
   '<div class="bot"><button class="hold" data-act="f-hold" id="fhold">'+(f.paused?'Resume':'Hold')+'</button><button class="fin" data-act="f-done">Done</button></div>'}
-function tick(){if(!S.focus)return;var e=$('#ftime');if(e)e.textContent=fmtTime(elapsed())}
+function tick(){if(!S.focus)return;var r=remaining(),e=$('#ftime');if(e)e.textContent=fmtTime(r);if(r<=0){clearInterval(ftimer);timeUp()}}
+function timeUp(){var f=S.focus;
+  if(f.brk){closeFocus();askDuration(f.kind,f.id,f.sid,f.mins);return}
+  modal({title:'Time is up',text:f.title,buttons:[{label:'Take a break',kind:'quiet',on:breakForm},{label:'Wrap up',on:wrapUp}]})}
+function breakForm(){
+  modal({title:'Break',fields:[{label:'Minutes',type:'number',value:'5'}],buttons:[{label:'Start break',needs0:true,on:function(v){
+    var f=S.focus;f.brk=true;f.dur=(parseFloat(v[0])||5)*60000;f.acc=0;f.t0=Date.now();f.paused=false;drawFocus();ftimer=setInterval(tick,500)}}]})}
+function wrapUp(){
+  modal({title:'Is it done?',text:S.focus.title,buttons:[{label:'Not yet',kind:'quiet',on:closeFocus},{label:'Done',on:finishFocus}]})}
 function closeFocus(){clearInterval(ftimer);S.focus=null;var el=$('#focus');el.hidden=true;el.innerHTML=''}
 function finishFocus(){var f=S.focus;
   if(f.kind==='step'){var p=get('projects',f.id);p.steps.forEach(function(s){if(s.id===f.sid)s.done=true});save('projects',p);delete S.picks.proj}
-  else if(f.kind==='task'){var t=get('tasks',f.id);t.done=true;save('tasks',t);delete S.picks.loose;delete S.picks.asap}
+  else if(f.kind==='task'){var t=get('tasks',f.id);t.done=true;save('tasks',t)}
   else{var b=get('habits',f.id);closeFocus();if(b.unit){askAmount(b)}else logHabit(b,1);return}
   closeFocus();toast('Done');location.hash='now';S.tab='now';render()}
 function askAmount(b){modal({title:b.name,fields:[{label:'How many '+b.unit+'?',type:'number',value:''}],buttons:[{label:'Cancel',kind:'quiet'},{label:'Log',needs0:true,on:function(v){logHabit(b,parseFloat(v[0].replace(',','.'))||0)}}]})}
-function logHabit(b,amount){save('logs',{habitId:b.id,amount:amount,date:iso(today()),at:new Date().toISOString()});delete S.picks.habit;S.open=null;S.amount='';toast('Logged '+b.name);render()}
+function logHabit(b,amount){save('logs',{habitId:b.id,amount:amount,date:iso(today()),at:new Date().toISOString()});S.open=null;S.amount='';toast('Logged '+b.name);render()}
 
 /* forms */
 function taskForm(t,asapDefault){
@@ -462,7 +466,9 @@ document.addEventListener('click',function(e){
   var el=e.target.closest('[data-act]');if(!el)return;var a=el.dataset.act,id=el.dataset.id;
   switch(a){
   case 'shuf':reshuffle(el.dataset.k);break;
-  case 'start':openFocus(el.dataset.kind,id,el.dataset.sid);break;
+  case 'start':askDuration(el.dataset.kind,id,el.dataset.sid);break;
+  case 'pick-habit':var hs=arr('habits'),r=hs[Math.floor(Math.random()*hs.length)];
+    modal({title:r.name,text:'Random pick',buttons:[{label:'Not now',kind:'quiet'},{label:'Start',on:function(){askDuration('habit',r.id)}}]});break;
   case 'new-project':projectForm(null);break;
   case 'open-project':S.project=id;S.tab='projects';location.hash='projects';render();window.scrollTo(0,0);break;
   case 'back':S.project=null;render();break;
@@ -472,7 +478,7 @@ document.addEventListener('click',function(e){
   case 'add-task':taskForm(null,false);break;
   case 'add-asap':taskForm(null,true);break;
   case 'edit-task':taskForm(get('tasks',id),false);break;
-  case 'task-done':var t=get('tasks',id);t.done=true;save('tasks',t);break;
+  case 'task-done':var t=get('tasks',id);confirmBox('Mark as done?',t.title,'Done',function(){t.done=true;save('tasks',t)});break;
   case 'hview':S.hview=el.dataset.v;render();break;
   case 'period':S.period=el.dataset.v;render();break;
   case 'add-habit':habitForm(null);break;

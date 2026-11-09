@@ -7,6 +7,4 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const ok=u.origin===location.origin||u.hostname==='www.gstatic.com'||u.hostname==='fonts.googleapis.com'||u.hostname==='fonts.gstatic.com';
   if(!ok)return;
-  e.respondWith(caches.match(e.request).then(hit=>{
-    const net=fetch(e.request).then(r=>{if(r&&(r.ok||r.type==='opaque')){const cp=r.clone();caches.open(V).then(c=>c.put(e.request,cp))}return r}).catch(()=>hit);
-    return hit||net}))});
+  e.respondWith(fetch(e.request,{cache:'no-cache'}).then(r=>{if(r&&(r.ok||r.type==='opaque')){const cp=r.clone();caches.open(V).then(c=>c.put(e.request,cp))}return r}).catch(()=>caches.match(e.request)))});
